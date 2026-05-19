@@ -19,35 +19,89 @@ This document describes how we implement **one** automated agent—the **Pulse A
 
 ## 2. System context
 
-```text
-                    ┌─────────────────────────────────────────┐
-                    │           Pulse Agent (host)           │
-                    │  CLI / scheduler → single run loop      │
-                    │  ┌─────────┐ ┌──────────┐ ┌──────────┐ │
-                    │  │ Ingest  │→│ Analyze  │→│ Render   │ │
-                    │  └─────────┘ └──────────┘ └────┬─────┘ │
-                    │                                 │       │
-                    │                    MCP client ──┼───┐   │
-                    └─────────────────────────────────┼───┼───┘
-                                                      │   │
-         App Store RSS / Play scraper (HTTP)          │   │
-                    ┌─────────────────────────────────┘   │
-                    ▼                                     ▼
-            [Public review sources]          ┌──────────────────┐
-                                             │ Google Docs MCP  │
-                                             │ Gmail MCP        │
-                                             └────────┬─────────┘
-                                                      ▼
-                                            Google Workspace
-                                            (Docs + Gmail)
+The **Pulse Agent** runs on your machine, VM, or CI scheduler. It does **not** embed Google OAuth or the Docs/Gmail SDKs. For delivery (Phases 4–5), it calls **one** deployed HTTP service over HTTPS; that service holds Google credentials and talks to Google Workspace APIs.
+
+> **One MCP server in production.** “Workspace MCP server” is the role name in this architecture. [NextLeap_MCP_Server_Gmail_GDocs](https://github.com/pbandyop/NextLeap_MCP_Server_Gmail_GDocs) is the **same** service—the GitHub repo and FastAPI app you deploy (e.g. to Railway). It is not a second server. Docs append and Gmail draft are **tools/endpoints on that single deploy**, not separate MCP processes.
+
+```mermaid
+flowchart TB
+  subgraph public["Public review sources"]
+    AS[App Store RSS]
+    PS[Play Store API / scraper]
+  end
+
+  subgraph host["Pulse Agent host — this repo"]
+    direction TB
+    CLI[CLI / cron scheduler]
+    ORCH[Orchestrator — fixed phase graph]
+    ING[Ingest]
+    ANA[Analyze + safety / PII]
+    REN[Render]
+    DEL["delivery.docs + delivery.gmail"]
+    HTTP["Workspace HTTP client\n(httpx)"]
+    CLI --> ORCH --> ING --> ANA --> REN --> DEL --> HTTP
+  end
+
+  GROQ[(Groq API\nllama-3.3-70b-versatile)]
+
+  subgraph mcp_deployed["Single deployed MCP server\n(repo: NextLeap_MCP_Server_Gmail_GDocs)"]
+    direction TB
+    API["One FastAPI app — Docs + Gmail tools\nGET /\nPOST /append_to_doc\nPOST /create_email_draft"]
+    SECRETS["OAuth + tokens\nGOOGLE_CREDENTIALS_JSON\nGOOGLE_TOKEN_JSON"]
+    API --- SECRETS
+  end
+
+  subgraph google["Google Workspace — Google Cloud"]
+    DOCS[Google Docs API]
+    GMAIL[Gmail API]
+  end
+
+  AS --> ING
+  PS --> ING
+  ANA --> GROQ
+  HTTP -->|"HTTPS\n(no Google secrets in agent)"| API
+  API --> DOCS
+  API --> GMAIL
 ```
+
+ASCII equivalent (same boundaries):
+
+```text
+  App Store RSS ──┐
+  Play Store    ──┼──► ┌──────────────────────────────────────┐
+                    │   │  Pulse Agent (host) — NextLeap_AIAgent_MCP │
+                    │   │  ingest → analyze → render → delivery    │
+                    │   │              │              │            │
+                    │   │              ▼              ▼            │
+                    │   │           Groq API    HTTP MCP client    │
+                    │   └──────────────────────────┬─────────────┘
+                    │                              │
+                    │                    HTTPS     │  (Phases 4–5 only)
+                    │                              ▼
+                    │   ┌──────────────────────────────────────────┐
+                    │   │  ONE deployed MCP server                 │
+                    │   │  (repo: NextLeap_MCP_Server_Gmail_GDocs) │
+                    │   │  OAuth/tokens here; append_to_doc;       │
+                    │   │  create_email_draft                      │
+                    │   └──────────────────┬───────────┬───────────┘
+                    │                      │           │
+                    │                      ▼           ▼
+                    │               Google Docs   Gmail APIs
+                    │                      └──► Google Workspace
+```
+
+| Component | Where it runs | Google OAuth in repo? |
+|-----------|----------------|------------------------|
+| Pulse Agent | Local / VM / GitHub Actions (unit tests) | **No** |
+| Workspace MCP server (= [NextLeap_MCP_Server_Gmail_GDocs](https://github.com/pbandyop/NextLeap_MCP_Server_Gmail_GDocs) deploy) | Hosted URL (`GOOGLE_MCP_BASE_URL`, e.g. [Railway](https://saksham-mcp-server-production-b243.up.railway.app/)) | **Yes** (server env only) |
+| Groq | Groq cloud | N/A |
 
 **External dependencies**
 
-- **LLM provider — Groq** (OpenAI-compatible chat API) for Phase 2 analysis: theme labels, cluster summaries, action ideas, and optional small-batch fallback. API key in agent env (`GROQ_API_KEY`), not in MCP servers.
-- **Embeddings** — separate from Groq (local `sentence-transformers` or another embedding API); used only for clustering, not for final prose.
-- **Google Docs MCP server** — OAuth, Docs API, tool surface for append/update.
-- **Gmail MCP server** — OAuth, Gmail API, tool surface for draft/send.
+- **LLM — Groq** (OpenAI-compatible chat API) for Phase 2: theme labels, summaries, actions. Key in agent env (`GROQ_API_KEY`). Called **directly** from the Pulse Agent host, not via MCP.
+- **Embeddings** — local `sentence-transformers` (or sklearn fallback) in the agent; not Groq, not MCP.
+- **Workspace MCP server** — the only production Google integration: one HTTP deploy of [NextLeap_MCP_Server_Gmail_GDocs](https://github.com/pbandyop/NextLeap_MCP_Server_Gmail_GDocs) with both `append_to_doc` and `create_email_draft`. Agent config: `google_workspace` in `config/mcp_servers.yaml` or env `GOOGLE_MCP_BASE_URL`.
+- **Not separate MCP servers:** `google_docs` / `gmail` stdio entries in `mcp_servers.yaml` are legacy Phase 0 placeholders (optional local smoke), **not** a second or third production server.
 
 ---
 
@@ -56,7 +110,7 @@ This document describes how we implement **one** automated agent—the **Pulse A
 The **Pulse Agent** is not a fleet of cooperating agents. It is:
 
 1. **Orchestrator** — Loads config, resolves `product_id` + `iso_week`, executes phases in order, handles failures and partial retries.
-2. **MCP host** — Maintains MCP sessions to Docs and Gmail servers for the duration of a run (or per delivery step, depending on server lifecycle—see [decision.md](./decision.md)).
+2. **MCP client (delivery only)** — Calls the **deployed** Workspace HTTP server for `append_to_doc` and `create_email_draft`; does not hold Google OAuth (see [decision.md](./decision.md) ADR-003).
 3. **Reasoning consumer** — Invokes the LLM with structured prompts and parsers; does not delegate to a second autonomous agent.
 
 Optional future: an LLM-driven planner inside the same process is still **one agent** if it shares the same run ID, config, and audit log. Initial implementation should use a **fixed phase graph** (predictable, testable) with LLM calls inside the Analyze and Render steps.
@@ -120,9 +174,9 @@ config/
 
 ### 5.1 Host responsibilities
 
-- Read MCP server definitions from config (stdio subprocess and/or SSE URL).
-- On run start (or before delivery): `initialize` / `tools/list` for Docs and Gmail servers.
-- Invoke tools with JSON arguments matching server schemas; never reimplement OAuth in the agent.
+- Read Workspace MCP base URL from `config/mcp_servers.yaml` (`google_workspace`) or `GOOGLE_MCP_BASE_URL`.
+- Before delivery: `GET /` health check on the deployed server.
+- Invoke REST tools with JSON bodies matching server schemas (`append_to_doc`, `create_email_draft`); never reimplement OAuth or `googleapiclient` in the agent.
 
 ### 5.2 Expected tool categories (contract with MCP servers)
 
