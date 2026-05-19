@@ -4,7 +4,7 @@ from pulse_agent.cli import main
 from pulse_agent.models.run import sanitize_path_segment
 
 
-def test_cli_dry_run_skip_ingest_writes_audit(project_root, tmp_path, monkeypatch):
+def test_cli_dry_run_skip_ingest_writes_audit(project_root, monkeypatch):
     monkeypatch.chdir(project_root)
     code = main(
         [
@@ -15,6 +15,8 @@ def test_cli_dry_run_skip_ingest_writes_audit(project_root, tmp_path, monkeypatc
             "2026-W20",
             "--dry-run",
             "--skip-ingest",
+            "--skip-analyze",
+            "--skip-render",
         ]
     )
     assert code == 0

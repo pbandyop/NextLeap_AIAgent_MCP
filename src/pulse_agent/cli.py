@@ -24,12 +24,7 @@ def load_dotenv_file(project_root: Path) -> None:
         pass
 
 
-def _add_run_flags(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--product", help="Product id from config/products.yaml")
-    parser.add_argument(
-        "--week",
-        help="ISO week label, e.g. 2026-W20 (default: current ISO week)",
-    )
+def _add_pipeline_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -113,13 +108,18 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="Full pipeline for one product and ISO week")
-    _add_run_flags(run)
+    run.add_argument("--product", required=True, help="Product id from config/products.yaml")
+    run.add_argument(
+        "--week",
+        help="ISO week label, e.g. 2026-W20 (default: current ISO week)",
+    )
+    _add_pipeline_flags(run)
     run.set_defaults(command="run")
 
     run_all = sub.add_parser("run-all", help="Full pipeline for every product in config")
     run_all.add_argument("--week", help="ISO week (default: current)")
-    _add_run_flags(run_all)
-    run_all.set_defaults(command="run-all", product=None)
+    _add_pipeline_flags(run_all)
+    run_all.set_defaults(command="run-all")
 
     backfill = sub.add_parser("backfill", help="Run pipeline for multiple ISO weeks")
     backfill.add_argument("--product", required=True)
@@ -129,7 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     backfill.add_argument("--from-week", help="Start ISO week (inclusive)")
     backfill.add_argument("--to-week", help="End ISO week (inclusive)")
-    _add_run_flags(backfill)
+    _add_pipeline_flags(backfill)
     backfill.set_defaults(command="backfill")
 
     return parser

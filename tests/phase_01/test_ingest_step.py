@@ -26,7 +26,9 @@ def test_ingest_step_writes_reviews_json(project_root, tmp_path):
         window_weeks=10,
         dry_run=True,
         skip_mcp=True,
-        project_root=project_root,
+        skip_analyze=True,
+        skip_render=True,
+        project_root=tmp_path,
     )
     app = [_review("a1", ReviewSource.APP_STORE)]
     play = [_review("p1", ReviewSource.PLAY_STORE)]

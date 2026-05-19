@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests (no live MCP / network integration)
+        env:
+          PYTHONPATH: src
+        run: |
+          pytest \
+            tests/phase_00 \
+            tests/phase_01 \
+            tests/phase_02/test_llm_parser.py \
+            tests/phase_02/test_quote_validation.py \
+            tests/delivery \
+            tests/render \
+            tests/safety \
+            tests/e2e \
+            tests/test_all_products_config.py \
+            tests/test_audit_docs.py \
+            tests/test_audit_gmail.py \
+            tests/test_exit_codes.py \
+            tests/test_production_gates.py \
+            tests/test_weeks.py \
+            -q --tb=short
+
+  integration-manual:
+    name: Live integration (manual)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    # Run from Actions tab → CI → Run workflow (after adding repo secrets).
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[analysis,dev]"
+      - name: Integration tests (requires secrets)
+        env:
+          PYTHONPATH: src
+          PULSE_DOC_ID_GROWW: ${{ secrets.PULSE_DOC_ID_GROWW }}
+          PULSE_EMAIL_TO: ${{ secrets.PULSE_EMAIL_TO }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: pytest tests/integration -m integration -q --tb=short
