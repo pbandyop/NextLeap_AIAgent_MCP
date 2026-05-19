@@ -9,7 +9,7 @@ This document describes how we implement **one** automated agent—the **Pulse A
 | Principle | Implication |
 |-----------|-------------|
 | **Single agent** | One process, one run loop, one configuration surface. No separate “ingestion agent,” “writer agent,” or “mailer agent.” |
-| **MCP for Google** | Docs append and Gmail send/draft are MCP tool calls from the Pulse Agent host. No Google REST SDK in this repo. |
+| **MCP for Google** | Docs append and Gmail send/draft are HTTP calls from the Pulse Agent process to the deployed Workspace MCP server. No Google REST SDK in the agent repo. |
 | **Modular monolith** | Internal Python (or chosen runtime) packages by concern; shared types and run context across phases. |
 | **Deterministic where possible** | Ingestion, clustering, idempotency keys, and render templates are code-first; LLM is used for theme naming, synthesis, and action ideas with guardrails. |
 | **Idempotent weekly runs** | Keyed by `(product_id, iso_week)`; safe to retry and backfill. |
@@ -19,26 +19,37 @@ This document describes how we implement **one** automated agent—the **Pulse A
 
 ## 2. System context
 
-The **Pulse Agent** runs on your machine, VM, or CI scheduler. It does **not** embed Google OAuth or the Docs/Gmail SDKs. For delivery (Phases 4–5), it calls **one** deployed HTTP service over HTTPS; that service holds Google credentials and talks to Google Workspace APIs.
+The **Pulse Agent** is the application you run (`pulse run …`). It executes on a normal **host machine** (laptop, VM, or CI runner)—there is **no** special DNS hostname called “Pulse.” The source code for that application lives in the GitHub repo **[NextLeap_AIAgent_MCP](https://github.com/pbandyop/NextLeap_AIAgent_MCP)** (Python package `pulse_agent`). The agent does **not** embed Google OAuth or the Docs/Gmail SDKs; for delivery (Phases 4–5) it calls **one** deployed HTTP service over HTTPS.
+
+| Term | Meaning | Not this |
+|------|---------|----------|
+| **Pulse Agent** | The weekly-pulse app/process (`pulse` CLI) | A cloud product named “Pulse” |
+| **Host** | Where the process runs (your PC, server, GitHub Actions) | A hostname or URL |
+| **NextLeap_AIAgent_MCP** | GitHub **repo** for the agent codebase | The MCP server; not a hostname |
 
 > **One MCP server in production.** “Workspace MCP server” is the role name in this architecture. [NextLeap_MCP_Server_Gmail_GDocs](https://github.com/pbandyop/NextLeap_MCP_Server_Gmail_GDocs) is the **same** service—the GitHub repo and FastAPI app you deploy (e.g. to Railway). It is not a second server. Docs append and Gmail draft are **tools/endpoints on that single deploy**, not separate MCP processes.
 
+**How ingestion fits the schedule.** App Store and Play Store do **not** push reviews into the agent. On each run (cron e.g. Monday 09:00 IST, or manual `pulse run`), the **scheduler starts the Pulse Agent**, the orchestrator reaches **Ingest**, and Ingest **pulls** reviews over HTTP/RSS from those public APIs. Arrows in the diagram labeled “pull each run” mean *initiated by Ingest when a run starts*, not a continuous feed from the stores.
+
 ```mermaid
 flowchart TB
-  subgraph public["Public review sources"]
+  CRON["Scheduler\ncron / Task Scheduler\n(weekly trigger)"]
+
+  subgraph public["Public review sources — passive APIs"]
     AS[App Store RSS]
     PS[Play Store API / scraper]
   end
 
-  subgraph host["Pulse Agent host — this repo"]
+  subgraph host["Pulse Agent process on a host machine\n(repo: NextLeap_AIAgent_MCP — not a hostname)"]
     direction TB
-    CLI[CLI / cron scheduler]
+    CLI["CLI: pulse run"]
     ORCH[Orchestrator — fixed phase graph]
-    ING[Ingest]
+    ING["Ingest\n(Phase 1 fetch)"]
     ANA[Analyze + safety / PII]
     REN[Render]
     DEL["delivery.docs + delivery.gmail"]
     HTTP["Workspace HTTP client\n(httpx)"]
+    CRON -->|"starts each run"| CLI
     CLI --> ORCH --> ING --> ANA --> REN --> DEL --> HTTP
   end
 
@@ -56,8 +67,8 @@ flowchart TB
     GMAIL[Gmail API]
   end
 
-  AS --> ING
-  PS --> ING
+  ING -->|"HTTP pull\neach run"| AS
+  ING -->|"HTTP pull\neach run"| PS
   ANA --> GROQ
   HTTP -->|"HTTPS\n(no Google secrets in agent)"| API
   API --> DOCS
@@ -67,34 +78,31 @@ flowchart TB
 ASCII equivalent (same boundaries):
 
 ```text
-  App Store RSS ──┐
-  Play Store    ──┼──► ┌──────────────────────────────────────┐
-                    │   │  Pulse Agent (host) — NextLeap_AIAgent_MCP │
-                    │   │  ingest → analyze → render → delivery    │
-                    │   │              │              │            │
-                    │   │              ▼              ▼            │
-                    │   │           Groq API    HTTP MCP client    │
-                    │   └──────────────────────────┬─────────────┘
-                    │                              │
-                    │                    HTTPS     │  (Phases 4–5 only)
-                    │                              ▼
-                    │   ┌──────────────────────────────────────────┐
-                    │   │  ONE deployed MCP server                 │
-                    │   │  (repo: NextLeap_MCP_Server_Gmail_GDocs) │
-                    │   │  OAuth/tokens here; append_to_doc;       │
-                    │   │  create_email_draft                      │
-                    │   └──────────────────┬───────────┬───────────┘
-                    │                      │           │
-                    │                      ▼           ▼
-                    │               Google Docs   Gmail APIs
-                    │                      └──► Google Workspace
+  Scheduler (cron) ──starts run──► pulse run → orchestrator
+                                        │
+                                        ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Pulse Agent (repo: NextLeap_AIAgent_MCP) on your host       │
+  │    ingest ──HTTP pull each run──► App Store RSS              │
+  │           └──HTTP pull each run──► Play Store                │
+  │    analyze ──► Groq API                                        │
+  │    render → delivery → HTTP MCP client (Phases 4–5)          │
+  └──────────────────────────────┬──────────────────────────────┘
+                                 │ HTTPS (no Google secrets in agent)
+                                 ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  ONE deployed MCP server (NextLeap_MCP_Server_Gmail_GDocs)   │
+  │  OAuth/tokens; append_to_doc; create_email_draft             │
+  └──────────────────────┬──────────────────┬───────────────────┘
+                         ▼                  ▼
+                  Google Docs API      Gmail API  →  Google Workspace
 ```
 
-| Component | Where it runs | Google OAuth in repo? |
-|-----------|----------------|------------------------|
-| Pulse Agent | Local / VM / GitHub Actions (unit tests) | **No** |
-| Workspace MCP server (= [NextLeap_MCP_Server_Gmail_GDocs](https://github.com/pbandyop/NextLeap_MCP_Server_Gmail_GDocs) deploy) | Hosted URL (`GOOGLE_MCP_BASE_URL`, e.g. [Railway](https://saksham-mcp-server-production-b243.up.railway.app/)) | **Yes** (server env only) |
-| Groq | Groq cloud | N/A |
+| Component | What it is | Where it runs | Google OAuth here? |
+|-----------|------------|---------------|-------------------|
+| Pulse Agent (`pulse_agent`) | App from repo **NextLeap_AIAgent_MCP** | Your laptop, VM, or CI (any **host machine**) | **No** |
+| Workspace MCP server | App from repo **NextLeap_MCP_Server_Gmail_GDocs** | Hosted URL (`GOOGLE_MCP_BASE_URL`, e.g. [Railway](https://saksham-mcp-server-production-b243.up.railway.app/)) | **Yes** (server env only) |
+| Groq | LLM API (external SaaS) | Groq cloud | N/A |
 
 **External dependencies**
 
