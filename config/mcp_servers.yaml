@@ -1,0 +1,27 @@
+# MCP server definitions — no secrets here; OAuth lives in server env.
+servers:
+  # Phase 4–5: deployed workspace server (Docs + Gmail REST)
+  google_workspace:
+    enabled: true
+    transport: http
+    base_url: https://saksham-mcp-server-production-b243.up.railway.app
+    timeout_seconds: 120
+
+  # Legacy stdio placeholders (Phase 0 smoke only; not used for delivery)
+  google_docs:
+    enabled: true
+    transport: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-google-docs"
+    timeout_seconds: 60
+
+  gmail:
+    enabled: true
+    transport: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-gmail"
+    timeout_seconds: 60

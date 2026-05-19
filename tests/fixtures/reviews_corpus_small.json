@@ -1,0 +1,107 @@
+{
+  "idempotency_key": "pulse:test:2026-W20",
+  "product_id": "groww",
+  "iso_week": "2026-W20",
+  "reviews": [
+    {
+      "source": "play_store",
+      "review_id": "p-1",
+      "rating": 1,
+      "title": "Login failed",
+      "body": "I cannot login to my account after the latest update and it keeps showing error.",
+      "review_date": "2026-05-10",
+      "author": "user1",
+      "locale": null,
+      "app_version": "18.9"
+    },
+    {
+      "source": "play_store",
+      "review_id": "p-2",
+      "rating": 1,
+      "title": "OTP issue",
+      "body": "OTP never arrives when I try to sign in from my new phone number.",
+      "review_date": "2026-05-11",
+      "author": "user2",
+      "locale": null,
+      "app_version": "18.9"
+    },
+    {
+      "source": "app_store",
+      "review_id": "a-1",
+      "rating": 2,
+      "title": "High brokerage",
+      "body": "Brokerage charges are too high compared to other apps for the same trades.",
+      "review_date": "2026-05-09",
+      "author": "user3",
+      "locale": null,
+      "app_version": "18.8"
+    },
+    {
+      "source": "play_store",
+      "review_id": "p-3",
+      "rating": 5,
+      "title": "Great app",
+      "body": "Very easy to use and the mutual fund SIP setup was smooth and intuitive.",
+      "review_date": "2026-05-12",
+      "author": "user4",
+      "locale": null,
+      "app_version": "18.9"
+    },
+    {
+      "source": "app_store",
+      "review_id": "a-2",
+      "rating": 5,
+      "title": "Love Groww",
+      "body": "Clean interface and fast UPI payments for investing every month without hassle.",
+      "review_date": "2026-05-13",
+      "author": "user5",
+      "locale": null,
+      "app_version": "18.9"
+    },
+    {
+      "source": "play_store",
+      "review_id": "p-4",
+      "rating": 4,
+      "title": "Good overall",
+      "body": "Works well most days but charts could load faster during market hours.",
+      "review_date": "2026-05-08",
+      "author": "user6",
+      "locale": null,
+      "app_version": "18.7"
+    },
+    {
+      "source": "play_store",
+      "review_id": "p-5",
+      "rating": 1,
+      "title": "Withdrawal delay",
+      "body": "My withdrawal has been pending for four days with no update from support team.",
+      "review_date": "2026-05-07",
+      "author": "user7",
+      "locale": null,
+      "app_version": "18.7"
+    },
+    {
+      "source": "app_store",
+      "review_id": "a-3",
+      "rating": 5,
+      "title": "Best for beginners",
+      "body": "Perfect for new investors who want simple dashboards and clear fund categories.",
+      "review_date": "2026-05-14",
+      "author": "user8",
+      "locale": null,
+      "app_version": "18.9"
+    }
+  ],
+  "stats": {
+    "app_store_fetched": 3,
+    "play_store_fetched": 5,
+    "after_dedupe": 8,
+    "after_window": 8,
+    "after_content_filter": 8,
+    "content_filter_removals": {},
+    "date_min": "2026-05-07",
+    "date_max": "2026-05-14",
+    "app_store_error": null,
+    "play_store_error": null
+  }
+}

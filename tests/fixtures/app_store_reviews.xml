@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns:im="http://itunes.apple.com/rss" xmlns:atom="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>app-meta</id>
+    <title>Groww</title>
+  </entry>
+  <entry>
+    <id>review-1001</id>
+    <title>Great for beginners</title>
+    <content>Easy to use mutual fund app.</content>
+    <im:rating>5</im:rating>
+    <updated>2026-04-01T10:00:00Z</updated>
+    <author><name>UserA</name></author>
+  </entry>
+  <entry>
+    <id>review-1002</id>
+    <title>App freezes</title>
+    <content>The app freezes when the market opens.</content>
+    <im:rating>2</im:rating>
+    <updated>2026-03-15T08:00:00Z</updated>
+    <author><name>UserB</name></author>
+  </entry>
+  <entry>
+    <id>review-1001</id>
+    <title>Duplicate id</title>
+    <content>Should be deduped.</content>
+    <im:rating>4</im:rating>
+    <updated>2026-04-02T08:00:00Z</updated>
+  </entry>
+</feed>

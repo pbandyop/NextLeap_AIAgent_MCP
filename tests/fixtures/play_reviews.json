@@ -1,0 +1,25 @@
+[
+  {
+    "reviewId": "play-2001",
+    "score": 4,
+    "title": "Good app",
+    "content": "Portfolio tracking is helpful.",
+    "at": "2026-04-10T12:00:00",
+    "userName": "PlayUser1"
+  },
+  {
+    "reviewId": "play-2002",
+    "score": 1,
+    "title": "Support slow",
+    "content": "Support takes days to reply.",
+    "at": "2026-03-20T09:00:00",
+    "userName": "PlayUser2"
+  },
+  {
+    "reviewId": "play-2001",
+    "score": 3,
+    "title": "Duplicate",
+    "content": "Duplicate play review.",
+    "at": "2026-04-11T09:00:00"
+  }
+]

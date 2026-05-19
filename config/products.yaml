@@ -1,0 +1,51 @@
+# Product registry — verify store IDs in staging (Phase 1).
+# app_store_country: iTunes RSS locale (in = India storefront for these apps)
+products:
+  groww:
+    display_name: Groww
+    # google_doc_id: set in .env as PULSE_DOC_ID_GROWW (preferred) or here
+    app_store_id: "1404871703"
+    app_store_country: in
+    play_package: com.nextbillion.groww
+    doc_title_template: "Weekly Review Pulse — Groww"
+    window_weeks: 10
+    min_reviews_threshold: 10
+    # Bulk fetch for Phase 2 corpus (≥1000 after content filter; App Store RSS caps ~500)
+    play_fetch_count: 5000
+    app_store_max_pages: 10
+
+  indmoney:
+    display_name: INDMoney
+    app_store_id: "1488267381"
+    app_store_country: in
+    play_package: com.indwealth.indian
+    doc_title_template: "Weekly Review Pulse — INDMoney"
+    window_weeks: 10
+    min_reviews_threshold: 10
+
+  powerup:
+    display_name: PowerUp Money
+    app_store_id: "6473790673"
+    app_store_country: in
+    play_package: com.powerup.money
+    doc_title_template: "Weekly Review Pulse — PowerUp Money"
+    window_weeks: 10
+    min_reviews_threshold: 10
+
+  wealth_monitor:
+    display_name: Wealth Monitor
+    app_store_id: "6443908306"
+    app_store_country: in
+    play_package: com.wealthmonitor.app
+    doc_title_template: "Weekly Review Pulse — Wealth Monitor"
+    window_weeks: 10
+    min_reviews_threshold: 10
+
+  kuvera:
+    display_name: Kuvera
+    app_store_id: "1203637303"
+    app_store_country: in
+    play_package: com.kuvera.app
+    doc_title_template: "Weekly Review Pulse — Kuvera"
+    window_weeks: 10
+    min_reviews_threshold: 10

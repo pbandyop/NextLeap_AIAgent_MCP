@@ -1,0 +1,54 @@
+{
+  "idempotency_key": "pulse:groww:2026-W20",
+  "product_id": "groww",
+  "iso_week": "2026-W20",
+  "themes": [
+    {
+      "cluster_id": "critical_1",
+      "label": "High Fees and Poor Trading Experience",
+      "summary": "Users report high brokerage fees and slow order execution.",
+      "sentiment": "critical",
+      "review_count": 120,
+      "actions": [
+        "Review fee structure for transparency",
+        "Improve order execution latency"
+      ]
+    },
+    {
+      "cluster_id": "positive_1",
+      "label": "Ease of Use",
+      "summary": "Users praise the clean UI and simple onboarding.",
+      "sentiment": "positive",
+      "review_count": 85,
+      "actions": [
+        "Keep onboarding flow lightweight",
+        "Add portfolio overview widgets"
+      ]
+    }
+  ],
+  "quotes": [
+    {
+      "text": "Fees are too high compared to competitors.",
+      "source_review_id": "q1",
+      "cluster_id": "critical_1",
+      "rating": 2,
+      "source": "play_store"
+    },
+    {
+      "text": "Very easy to start investing as a beginner.",
+      "source_review_id": "q2",
+      "cluster_id": "positive_1",
+      "rating": 5,
+      "source": "app_store"
+    }
+  ],
+  "metadata": {},
+  "stats": {
+    "groq_requests": 4,
+    "groq_tokens_estimated": 8000,
+    "clustering_method": "kmeans",
+    "positive_review_count": 85,
+    "critical_review_count": 120,
+    "theme_count": 2
+  }
+}

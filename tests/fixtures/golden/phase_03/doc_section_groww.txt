@@ -1,0 +1,47 @@
+<!-- pulse:groww:2026-W20 -->
+
+Groww — Weekly Pulse — 2026-W20
+===============================
+
+Period: 2026-W20
+Reviews analyzed: 205
+Themes identified: 2
+
+Who this helps
+-----------
+Product managers prioritizing roadmap items, support leads tracking recurring issues,
+and leadership scanning weekly sentiment without reading raw app-store feeds.
+
+Critical themes (action priority)
+---------------------------------
+
+## High Fees and Poor Trading Experience (120 reviews)
+Users report high brokerage fees and slow order execution.
+
+Suggested actions:
+  • Review fee structure for transparency
+  • Improve order execution latency
+
+Representative quote:
+  "Fees are too high compared to competitors." (2★, play_store)
+
+Positive themes
+---------------
+
+## Ease of Use (85 reviews)
+Users praise the clean UI and simple onboarding.
+
+Suggested actions:
+  • Keep onboarding flow lightweight
+  • Add portfolio overview widgets
+
+Representative quote:
+  "Very easy to start investing as a beginner." (5★, app_store)
+
+Top suggested actions (deduplicated)
+--------------------------------
+
+  • Review fee structure for transparency
+  • Improve order execution latency
+  • Keep onboarding flow lightweight
+  • Add portfolio overview widgets

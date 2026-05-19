@@ -1,0 +1,11 @@
+# Environment profiles (applied via PULSE_ENV; see phase_07_hardening/gates.py)
+profiles:
+  dev:
+    email_mode: draft
+    description: Local development; MCP delivery optional via --dry-run
+  staging:
+    email_mode: draft
+    description: Staging runs; real MCP to test accounts, draft only
+  production:
+    email_mode: draft
+    description: Production; send requires PULSE_PRODUCTION_SEND_APPROVED=true
